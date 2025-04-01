@@ -1,0 +1,43 @@
+#include <iostream>
+#include <vector>
+#include <list>
+#include <chrono>
+
+const int N = 1000000; // Duża liczba elementów
+
+int main() {
+    // Tworzenie i wypełnianie std::vector
+    std::vector<int> vec;
+    vec.reserve(N); // Rezerwacja pamięci dla wektora
+    for (int i = 0; i < N; ++i) {
+        vec.push_back(i);
+    }
+
+    // Tworzenie i wypełnianie std::list
+    std::list<int> lst;
+    for (int i = 0; i < N; ++i) {
+        lst.push_back(i);
+    }
+
+    // Pomiar czasu sumowania dla std::vector
+    auto start_vec = std::chrono::high_resolution_clock::now();
+    long long sum_vec = 0;
+    for (int v : vec) {
+        sum_vec += v;
+    }
+    auto end_vec = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_vec = end_vec - start_vec;
+    std::cout << "Czas sumowania std::vector: " << duration_vec.count() << " s" << std::endl;
+
+    // Pomiar czasu sumowania dla std::list
+    auto start_list = std::chrono::high_resolution_clock::now();
+    long long sum_list = 0;
+    for (int l : lst) {
+        sum_list += l;
+    }
+    auto end_list = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_list = end_list - start_list;
+    std::cout << "Czas sumowania std::list: " << duration_list.count() << " s" << std::endl;
+
+    return 0;
+}

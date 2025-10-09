@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+
+import os
+import pwd
+
+def procesy():
+    procesy = []
+    for pid in os.listdir("/proc"):
+        if pid.isdigit():
+            try:
+                status_path = f'/proc/{pid}/status'
+                comm_path = f'/proc/{pid}/comm'
+                    
+                with open(status_path) as f:
+                    uid = None
+                    for line in f:
+                          
+                
+                    
+                    
+            except ():
+
+
+
+
+
+
+
+
+#!/usr/bin/env python3
+import os
+import pwd
+
+def get_processes():
+    processes = []
+    for pid in os.listdir('/proc'):
+        if pid.isdigit():
+            try:
+                # Ścieżki do plików
+                status_path = f'/proc/{pid}/status'
+                comm_path = f'/proc/{pid}/comm'
+
+                # Odczyt UID z /proc/[PID]/status
+                with open(status_path) as f:
+                    uid = None
+                    for line in f:
+                        if line.startswith('Uid:'):
+                            uid = int(line.split()[1])  # Real UID
+                            break
+                    if uid is None:
+                        continue
+
+                # Zamiana UID na nazwę użytkownika
+                user = pwd.getpwuid(uid).pw_name
+
+                # Odczyt nazwy komendy
+                with open(comm_path) as f:
+                    comm = f.readline().strip()
+
+                processes.append((user, int(pid), comm))
+
+            except (FileNotFoundError, PermissionError):
+                # Proces mógł zniknąć lub brak dostępu
+                continue
+    return processes
+
+def main():
+    print(f"{'USER':<15} {'PID':<7} COMMAND")
+    for user, pid, comm in sorted(get_processes(), key=lambda x: x[1]):
+        print(f"{user:<15} {pid:<7} {comm}")
+
+if __name__ == "__main__":
+    main()

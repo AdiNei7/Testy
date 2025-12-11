@@ -7,6 +7,7 @@ for dir in "$@"; do
     printf "name\tcompress\tdecompress\tratio\n"
 
     tar_file="$tmp_dir/archive.tar"
+    rm -f "$tar_file"
     tar cf "$tar_file" "$dir" >/dev/null 2>&1
     orig_size=$(stat -c%s "$tar_file")
 
@@ -81,13 +82,13 @@ for dir in "$@"; do
                 ;;
             7z)
                 start=$(date +%s.%N)
-                7z a "$tmp_dir/test.tar.7z" "$tmp_dir/test.tar" >/dev/null 2>&1
+                7z a -y "$tmp_dir/test.tar.7z" "$tmp_dir/test.tar" >/dev/null 2>&1
                 end=$(date +%s.%N)
                 ctime=$(echo "$end - $start" | bc -l)
 
                 mkdir -p "$tmp_dir/out"
                 start=$(date +%s.%N)
-                7z x "$tmp_dir/test.tar.7z" -o"$tmp_dir/out" >/dev/null 2>&1
+                7z x -y "$tmp_dir/test.tar.7z" -o"$tmp_dir/out" >/dev/null 2>&1
                 end=$(date +%s.%N)
                 dtime=$(echo "$end - $start" | bc -l)
 
@@ -101,7 +102,7 @@ for dir in "$@"; do
         printf "%s\t%s\t%s\t%s%%\n" "$prog" "$ctime" "$dtime" "$ratio"
 
         rm -f "$tmp_dir"/test.tar*
-        rm -f "$tmp_dir"/out/* 2>/dev/null
+        rm -rf "$tmp_dir/out"
     done
 
     rm -f "$tar_file"

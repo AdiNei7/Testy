@@ -1,73 +1,110 @@
-#!/usr/bin/env python3
+#!/bin/bash
 
-import os
-import pwd
+tmp_dir=$(mktemp -d)
 
-def procesy():
-    procesy = []
-    for pid in os.listdir("/proc"):
-        if pid.isdigit():
-            try:
-                status_path = f'/proc/{pid}/status'
-                comm_path = f'/proc/{pid}/comm'
-                    
-                with open(status_path) as f:
-                    uid = None
-                    for line in f:
-                          
-                
-                    
-                    
-            except ():
+for dir in "$@"; do
+    echo "$dir"
+    printf "name\tcompress\tdecompress\tratio\n"
 
+    tar_file="$tmp_dir/archive.tar"
+    tar cf "$tar_file" "$dir" >/dev/null 2>&1
+    orig_size=$(stat -c%s "$tar_file")
 
+    for prog in gzip bzip2 xz zstd lz4 7z; do
+        cp "$tar_file" "$tmp_dir/test.tar"
 
+        case $prog in
+            gzip)
+                start=$(date +%s.%N)
+                gzip -k "$tmp_dir/test.tar" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                ctime=$(echo "$end - $start" | bc -l)
 
+                start=$(date +%s.%N)
+                gunzip -k "$tmp_dir/test.tar.gz" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                dtime=$(echo "$end - $start" | bc -l)
 
+                comp_file="$tmp_dir/test.tar.gz"
+                ;;
+            bzip2)
+                start=$(date +%s.%N)
+                bzip2 -k "$tmp_dir/test.tar" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                ctime=$(echo "$end - $start" | bc -l)
 
+                start=$(date +%s.%N)
+                bunzip2 -k "$tmp_dir/test.tar.bz2" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                dtime=$(echo "$end - $start" | bc -l)
 
+                comp_file="$tmp_dir/test.tar.bz2"
+                ;;
+            xz)
+                start=$(date +%s.%N)
+                xz -k "$tmp_dir/test.tar" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                ctime=$(echo "$end - $start" | bc -l)
 
-#!/usr/bin/env python3
-import os
-import pwd
+                start=$(date +%s.%N)
+                unxz -k "$tmp_dir/test.tar.xz" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                dtime=$(echo "$end - $start" | bc -l)
 
-def get_processes():
-    processes = []
-    for pid in os.listdir('/proc'):
-        if pid.isdigit():
-            try:
-                # Ścieżki do plików
-                status_path = f'/proc/{pid}/status'
-                comm_path = f'/proc/{pid}/comm'
+                comp_file="$tmp_dir/test.tar.xz"
+                ;;
+            zstd)
+                start=$(date +%s.%N)
+                zstd -k "$tmp_dir/test.tar" -o "$tmp_dir/test.tar.zst" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                ctime=$(echo "$end - $start" | bc -l)
 
-                # Odczyt UID z /proc/[PID]/status
-                with open(status_path) as f:
-                    uid = None
-                    for line in f:
-                        if line.startswith('Uid:'):
-                            uid = int(line.split()[1])  # Real UID
-                            break
-                    if uid is None:
-                        continue
+                start=$(date +%s.%N)
+                zstd -d -k "$tmp_dir/test.tar.zst" -o "$tmp_dir/test.tar" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                dtime=$(echo "$end - $start" | bc -l)
 
-                # Zamiana UID na nazwę użytkownika
-                user = pwd.getpwuid(uid).pw_name
+                comp_file="$tmp_dir/test.tar.zst"
+                ;;
+            lz4)
+                start=$(date +%s.%N)
+                lz4 -k "$tmp_dir/test.tar" "$tmp_dir/test.tar.lz4" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                ctime=$(echo "$end - $start" | bc -l)
 
-                # Odczyt nazwy komendy
-                with open(comm_path) as f:
-                    comm = f.readline().strip()
+                start=$(date +%s.%N)
+                lz4 -d -k "$tmp_dir/test.tar.lz4" "$tmp_dir/test.tar" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                dtime=$(echo "$end - $start" | bc -l)
 
-                processes.append((user, int(pid), comm))
+                comp_file="$tmp_dir/test.tar.lz4"
+                ;;
+            7z)
+                start=$(date +%s.%N)
+                7z a "$tmp_dir/test.tar.7z" "$tmp_dir/test.tar" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                ctime=$(echo "$end - $start" | bc -l)
 
-            except (FileNotFoundError, PermissionError):
-                # Proces mógł zniknąć lub brak dostępu
-                continue
-    return processes
+                mkdir -p "$tmp_dir/out"
+                start=$(date +%s.%N)
+                7z x "$tmp_dir/test.tar.7z" -o"$tmp_dir/out" >/dev/null 2>&1
+                end=$(date +%s.%N)
+                dtime=$(echo "$end - $start" | bc -l)
 
-def main():
-    print(f"{'USER':<15} {'PID':<7} COMMAND")
-    for user, pid, comm in sorted(get_processes(), key=lambda x: x[1]):
-        print(f"{user:<15} {pid:<7} {comm}")
+                comp_file="$tmp_dir/test.tar.7z"
+                ;;
+        esac
 
-if __name__ == "__main__":
-    main()
+        comp_size=$(stat -c%s "$comp_file")
+        ratio=$(echo "scale=1; $comp_size * 100 / $orig_size" | bc)
+
+        printf "%s\t%s\t%s\t%s%%\n" "$prog" "$ctime" "$dtime" "$ratio"
+
+        rm -f "$tmp_dir"/test.tar*
+        rm -f "$tmp_dir"/out/* 2>/dev/null
+    done
+
+    rm -f "$tar_file"
+done
+
+rm -rf "$tmp_dir"

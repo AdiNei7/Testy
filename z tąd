@@ -7,8 +7,8 @@ for dir in "$@"; do
     printf "name\tcompress\tdecompress\tratio\n"
 
     tar_file="$tmp_dir/archive.tar"
-    rm -f "$tar_file"
-    tar cf "$tar_file" "$dir" >/dev/null 2>&1
+    tar cvf "$tar_file" "$dir" >/dev/null
+
     orig_size=$(stat -c%s "$tar_file")
 
     for prog in gzip bzip2 xz zstd lz4 7z; do
@@ -17,12 +17,12 @@ for dir in "$@"; do
         case $prog in
             gzip)
                 start=$(date +%s.%N)
-                gzip -k "$tmp_dir/test.tar" >/dev/null 2>&1
+                gzip -k "$tmp_dir/test.tar"
                 end=$(date +%s.%N)
                 ctime=$(echo "$end - $start" | bc -l)
 
                 start=$(date +%s.%N)
-                gunzip -k "$tmp_dir/test.tar.gz" >/dev/null 2>&1
+                gunzip -k "$tmp_dir/test.tar.gz"
                 end=$(date +%s.%N)
                 dtime=$(echo "$end - $start" | bc -l)
 
@@ -30,12 +30,12 @@ for dir in "$@"; do
                 ;;
             bzip2)
                 start=$(date +%s.%N)
-                bzip2 -k "$tmp_dir/test.tar" >/dev/null 2>&1
+                bzip2 -k "$tmp_dir/test.tar"
                 end=$(date +%s.%N)
                 ctime=$(echo "$end - $start" | bc -l)
 
                 start=$(date +%s.%N)
-                bunzip2 -k "$tmp_dir/test.tar.bz2" >/dev/null 2>&1
+                bunzip2 -k "$tmp_dir/test.tar.bz2"
                 end=$(date +%s.%N)
                 dtime=$(echo "$end - $start" | bc -l)
 
@@ -43,12 +43,12 @@ for dir in "$@"; do
                 ;;
             xz)
                 start=$(date +%s.%N)
-                xz -k "$tmp_dir/test.tar" >/dev/null 2>&1
+                xz -k "$tmp_dir/test.tar"
                 end=$(date +%s.%N)
                 ctime=$(echo "$end - $start" | bc -l)
 
                 start=$(date +%s.%N)
-                unxz -k "$tmp_dir/test.tar.xz" >/dev/null 2>&1
+                unxz -k "$tmp_dir/test.tar.xz"
                 end=$(date +%s.%N)
                 dtime=$(echo "$end - $start" | bc -l)
 
@@ -56,12 +56,12 @@ for dir in "$@"; do
                 ;;
             zstd)
                 start=$(date +%s.%N)
-                zstd -k "$tmp_dir/test.tar" -o "$tmp_dir/test.tar.zst" >/dev/null 2>&1
+                zstd -k "$tmp_dir/test.tar" >/dev/null
                 end=$(date +%s.%N)
                 ctime=$(echo "$end - $start" | bc -l)
 
                 start=$(date +%s.%N)
-                zstd -d -k "$tmp_dir/test.tar.zst" -o "$tmp_dir/test.tar" >/dev/null 2>&1
+                zstd -d -k "$tmp_dir/test.tar.zst" >/dev/null
                 end=$(date +%s.%N)
                 dtime=$(echo "$end - $start" | bc -l)
 
@@ -69,12 +69,12 @@ for dir in "$@"; do
                 ;;
             lz4)
                 start=$(date +%s.%N)
-                lz4 -k "$tmp_dir/test.tar" "$tmp_dir/test.tar.lz4" >/dev/null 2>&1
+                lz4 -k "$tmp_dir/test.tar" "$tmp_dir/test.tar.lz4" >/dev/null
                 end=$(date +%s.%N)
                 ctime=$(echo "$end - $start" | bc -l)
 
                 start=$(date +%s.%N)
-                lz4 -d -k "$tmp_dir/test.tar.lz4" "$tmp_dir/test.tar" >/dev/null 2>&1
+                lz4 -d -k "$tmp_dir/test.tar.lz4" >/dev/null
                 end=$(date +%s.%N)
                 dtime=$(echo "$end - $start" | bc -l)
 
@@ -82,13 +82,12 @@ for dir in "$@"; do
                 ;;
             7z)
                 start=$(date +%s.%N)
-                7z a -y "$tmp_dir/test.tar.7z" "$tmp_dir/test.tar" >/dev/null 2>&1
+                7z a "$tmp_dir/test.tar.7z" "$tmp_dir/test.tar" >/dev/null
                 end=$(date +%s.%N)
                 ctime=$(echo "$end - $start" | bc -l)
 
-                mkdir -p "$tmp_dir/out"
                 start=$(date +%s.%N)
-                7z x -y "$tmp_dir/test.tar.7z" -o"$tmp_dir/out" >/dev/null 2>&1
+                7z x "$tmp_dir/test.tar.7z" -o"$tmp_dir/out" >/dev/null
                 end=$(date +%s.%N)
                 dtime=$(echo "$end - $start" | bc -l)
 
@@ -101,11 +100,9 @@ for dir in "$@"; do
 
         printf "%s\t%s\t%s\t%s%%\n" "$prog" "$ctime" "$dtime" "$ratio"
 
-        rm -f "$tmp_dir"/test.tar*
-        rm -rf "$tmp_dir/out"
+        rm -rf "$tmp_dir"/*
+        tar cvf "$tar_file" "$dir" >/dev/null
     done
-
-    rm -f "$tar_file"
 done
 
 rm -rf "$tmp_dir"

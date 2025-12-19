@@ -1,0 +1,102 @@
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Random;
+
+public class Abstrakcja {
+
+    public static void main(String[] args) {
+
+        Pracownik[] pracownicy = new Pracownik[1];
+        pracownicy[0] = new Pracownik("Jan Kowalski", 3000, 2025, 11, 14);
+        pracownicy[0].premia(20);
+        System.out.println("PRACOWNIK:");
+        System.out.println(pracownicy[0].getInfo());
+        System.out.println("ID: " + pracownicy[0].getNi() + "\n");
+
+        Student[] studenci = new Student[1];
+        studenci[0] = new Student("Anna Nowak", "Informatyka");
+        System.out.println("STUDENT:");
+        System.out.println(studenci[0].getInfo());
+    }
+}
+
+class Pracownik {
+    private static int n;
+    private int ni;
+
+    private String nazwa;
+    private double pensja;
+    private Date dzat;
+
+    static {
+        Random r = new Random();
+        n = r.nextInt(11);
+    }
+
+    public Pracownik(String nazwa, double pensja, int rok, int miesiac, int dzien) {
+        this.nazwa = nazwa;
+        this.pensja = pensja;
+        this.ni = n++;
+        GregorianCalendar kalendarz = new GregorianCalendar(rok, miesiac - 1, dzien);
+        this.dzat = kalendarz.getTime();
+    }
+
+    public void premia(double procent) {
+        if (procent >= 0) {
+            pensja += pensja * procent / 100.0;
+        }
+    }
+
+    public String getInfo() {
+        return String.format("Pracownik: %s, wypłata: %.2f zł (zatrudniony %s)",
+                nazwa, pensja, dzat.toString());
+    }
+
+    public int getNi() { return ni; }
+    public String getNazwa() { return nazwa; }
+    public double getPensja() { return pensja; }
+    public Date getDzat() { return dzat; }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+public class Student {
+
+    private String nazwa;
+    private String specjalnosc;
+
+    public Student(String nazwa, String specjalnosc) {
+        this.nazwa = nazwa;
+        this.specjalnosc = specjalnosc;
+    }
+
+    public String getInfo() {
+        return String.format("Student: %s, specjalność: %s", nazwa, specjalnosc);
+    }
+
+    public String getNazwa() {
+        return nazwa;
+    }
+
+    public String getSpecjalnosc() {
+        return specjalnosc;
+    }
+
+    public void setSpecjalnosc(String nowaSpecjalnosc) {
+        this.specjalnosc = nowaSpecjalnosc;
+    }
+}

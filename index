@@ -1,0 +1,38 @@
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Header from "../../components/Header";
+import ListItem from "../../components/ListItem";
+
+export default function App() {
+  const events = [
+    { id: 1, title: "Wykład React", description: "Wstęp do komponentów", location: "Sala A1", isHighlighted: true },
+    { id: 2, title: "Warsztaty AI", description: "Prompt engineering", location: "Sala B2", isHighlighted: false },
+    { id: 3, title: "Spotkanie Koła", description: "Planowanie hackathonu", location: "Sala C3", isHighlighted: false },
+    { id: 4, title: "Konferencja IT", description: "Trendy w 2026 roku", location: "Aula Główna", isHighlighted: true },
+    { id: 5, title: "Konsultacje", description: "Poprawa projektów", location: "Pokój 304", isHighlighted: false },
+  ];
+
+  return (
+    <View style={styles.container}>
+      <Header title="Smart Campus" />
+      <ScrollView>
+        {events.map(event => (
+          <ListItem
+            key={event.id}
+            title={event.title}
+            description={event.description}
+            location={event.location}
+            isHighlighted={event.isHighlighted}
+          />
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f2f2f2',
+  },
+});

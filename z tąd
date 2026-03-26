@@ -1,108 +1,44 @@
-#!/bin/bash
+type Opinia = { autor: string; tresc: string; ocena: number };
 
-tmp_dir=$(mktemp -d)
+class Produkt {
+    constructor(
+        public nazwa: string,
+        public cena: number,
+        public opis: string,
+        public opinie: Opinia[] = []
+    ) {}
+}
 
-for dir in "$@"; do
-    echo "$dir"
-    printf "name\tcompress\tdecompress\tratio\n"
+const Magazyn = new Map<Produkt, number>();
 
-    tar_file="$tmp_dir/archive.tar"
-    tar cvf "$tar_file" "$dir" >/dev/null
+class KoszykItem {
+    constructor(public produkt: Produkt, public ilosc: number) {
+        if (ilosc <= 0) throw new Error("Ilość musi być większa niż 0");
+    }
+    get lacznaSuma() { return this.produkt.cena * this.ilosc; }
+}
 
-    orig_size=$(stat -c%s "$tar_file")
+class Koszyk {
+    produkty: KoszykItem[] = [];
 
-    for prog in gzip bzip2 xz zstd lz4 7z; do
-        cp "$tar_file" "$tmp_dir/test.tar"
+    dodaj(ki: KoszykItem) {
+        const wMagazynie = Magazyn.get(ki.produkt) ?? 0;
+        const wKoszyku = this.produkty.find(p => p.produkt === ki.produkt);
+        const nowaIlosc = (wKoszyku?.ilosc ?? 0) + ki.ilosc;
 
-        case $prog in
-            gzip)
-                start=$(date +%s.%N)
-                gzip -k "$tmp_dir/test.tar"
-                end=$(date +%s.%N)
-                ctime=$(echo "$end - $start" | bc -l)
+        if (wMagazynie < nowaIlosc) {
+            return console.error(`Błąd: Brak wystarczającej ilości ${ki.produkt.nazwa} w magazynie!`);
+        }
 
-                start=$(date +%s.%N)
-                gunzip -k "$tmp_dir/test.tar.gz"
-                end=$(date +%s.%N)
-                dtime=$(echo "$end - $start" | bc -l)
+        wKoszyku ? (wKoszyku.ilosc += ki.ilosc) : this.produkty.push(ki);
+        console.log(`Dodano ${ki.ilosc}x ${ki.produkt.nazwa} do koszyka.`);
+    }
 
-                comp_file="$tmp_dir/test.tar.gz"
-                ;;
-            bzip2)
-                start=$(date +%s.%N)
-                bzip2 -k "$tmp_dir/test.tar"
-                end=$(date +%s.%N)
-                ctime=$(echo "$end - $start" | bc -l)
+    get sumaCalkowita() {
+        return this.produkty.reduce((acc, item) => acc + item.lacznaSuma, 0);
+    }
+}
 
-                start=$(date +%s.%N)
-                bunzip2 -k "$tmp_dir/test.tar.bz2"
-                end=$(date +%s.%N)
-                dtime=$(echo "$end - $start" | bc -l)
-
-                comp_file="$tmp_dir/test.tar.bz2"
-                ;;
-            xz)
-                start=$(date +%s.%N)
-                xz -k "$tmp_dir/test.tar"
-                end=$(date +%s.%N)
-                ctime=$(echo "$end - $start" | bc -l)
-
-                start=$(date +%s.%N)
-                unxz -k "$tmp_dir/test.tar.xz"
-                end=$(date +%s.%N)
-                dtime=$(echo "$end - $start" | bc -l)
-
-                comp_file="$tmp_dir/test.tar.xz"
-                ;;
-            zstd)
-                start=$(date +%s.%N)
-                zstd -k "$tmp_dir/test.tar" >/dev/null
-                end=$(date +%s.%N)
-                ctime=$(echo "$end - $start" | bc -l)
-
-                start=$(date +%s.%N)
-                zstd -d -k "$tmp_dir/test.tar.zst" >/dev/null
-                end=$(date +%s.%N)
-                dtime=$(echo "$end - $start" | bc -l)
-
-                comp_file="$tmp_dir/test.tar.zst"
-                ;;
-            lz4)
-                start=$(date +%s.%N)
-                lz4 -k "$tmp_dir/test.tar" "$tmp_dir/test.tar.lz4" >/dev/null
-                end=$(date +%s.%N)
-                ctime=$(echo "$end - $start" | bc -l)
-
-                start=$(date +%s.%N)
-                lz4 -d -k "$tmp_dir/test.tar.lz4" >/dev/null
-                end=$(date +%s.%N)
-                dtime=$(echo "$end - $start" | bc -l)
-
-                comp_file="$tmp_dir/test.tar.lz4"
-                ;;
-            7z)
-                start=$(date +%s.%N)
-                7z a "$tmp_dir/test.tar.7z" "$tmp_dir/test.tar" >/dev/null
-                end=$(date +%s.%N)
-                ctime=$(echo "$end - $start" | bc -l)
-
-                start=$(date +%s.%N)
-                7z x "$tmp_dir/test.tar.7z" -o"$tmp_dir/out" >/dev/null
-                end=$(date +%s.%N)
-                dtime=$(echo "$end - $start" | bc -l)
-
-                comp_file="$tmp_dir/test.tar.7z"
-                ;;
-        esac
-
-        comp_size=$(stat -c%s "$comp_file")
-        ratio=$(echo "scale=1; $comp_size * 100 / $orig_size" | bc)
-
-        printf "%s\t%s\t%s\t%s%%\n" "$prog" "$ctime" "$dtime" "$ratio"
-
-        rm -rf "$tmp_dir"/*
-        tar cvf "$tar_file" "$dir" >/dev/null
-    done
-done
-
-rm -rf "$tmp_dir"
+class Uzytkownik {
+    constructor(public readonly id: string) {}
+}
